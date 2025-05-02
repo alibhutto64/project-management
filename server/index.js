@@ -14,9 +14,21 @@ app.use(cors());
 app.use(express.json());
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.error('MongoDB connection error:', err));
+const { MongoMemoryServer } = require('mongodb-memory-server');
+
+async function connectDB() {
+  if (process.env.NODE_ENV === 'development') {
+    const mongoServer = await MongoMemoryServer.create();
+    const mongoUri = mongoServer.getUri();
+    await mongoose.connect(mongoUri);
+    console.log('MongoDB connected to in-memory server');
+  } else {
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log('MongoDB connected to production server');
+  }
+}
+
+connectDB().catch(err => console.error('MongoDB connection error:', err));
 
 // Routes
 app.use('/api/auth', authRoutes);
